@@ -15,6 +15,9 @@ A simple tool to manage Steam and import manifest/lua files.
 - Latest release (portable EXE):
   - https://github.com/kozaaaaczx/steam-lua/releases
 
+## Changelog
+See [CHANGELOG.md](CHANGELOG.md) for release notes.
+
 ## Screenshots
 ![Main window](https://raw.githubusercontent.com/kozaaaaczx/steam-lua/main/assets/main.png)
 

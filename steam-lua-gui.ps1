@@ -2,6 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # Steam functions (embedded so the EXE is self-contained)
+$script:AppVersion = '1.1.0'
 $script:SteamExeOverride = $null
 
 function Get-SteamExePath {
@@ -90,7 +91,7 @@ function Add-Log {
 
 # UI
 ${form}            = New-Object System.Windows.Forms.Form
-${form}.Text       = 'Steam lua'
+${form}.Text       = "Steam lua v$script:AppVersion"
 ${form}.Size       = New-Object System.Drawing.Size(980, 560)
 ${form}.StartPosition= 'CenterScreen'
 ${form}.MaximizeBox= $true
@@ -197,7 +198,7 @@ $sideLayout.Dock = 'Fill'
 $sideLayout.ColumnCount = 1
 $sideLayout.RowCount = 3
 $sideLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 170)))
-$sideLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 210)))
+$sideLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 220)))
 $sideLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Percent, 100)))
 
 $groupSteam = New-Object System.Windows.Forms.GroupBox
@@ -320,9 +321,10 @@ $groupQuick.Padding = New-Object System.Windows.Forms.Padding(10,20,10,10)
 $quickLayout = New-Object System.Windows.Forms.TableLayoutPanel
 $quickLayout.Dock = 'Fill'
 $quickLayout.ColumnCount = 2
-$quickLayout.RowCount = 3
+$quickLayout.RowCount = 4
 $quickLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 50)))
 $quickLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 50)))
+$quickLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 36)))
 $quickLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 36)))
 $quickLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 36)))
 $quickLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 36)))
@@ -333,6 +335,7 @@ $btnClearLog = New-DarkButton 'Clear log'
 $btnSaveLog = New-DarkButton 'Save log'
 $btnCopyPath = New-DarkButton 'Copy Steam path'
 $btnRevealConfig = New-DarkButton 'Open config'
+$btnAbout = New-DarkButton 'About'
 
 $btnOpenDepot.Margin = New-Object System.Windows.Forms.Padding(3,0,3,0)
 $btnOpenLua.Margin = New-Object System.Windows.Forms.Padding(3,0,3,0)
@@ -340,6 +343,7 @@ $btnClearLog.Margin = New-Object System.Windows.Forms.Padding(3,0,3,0)
 $btnSaveLog.Margin = New-Object System.Windows.Forms.Padding(3,0,3,0)
 $btnCopyPath.Margin = New-Object System.Windows.Forms.Padding(3,0,3,0)
 $btnRevealConfig.Margin = New-Object System.Windows.Forms.Padding(3,0,3,0)
+$btnAbout.Margin = New-Object System.Windows.Forms.Padding(3,0,3,0)
 
 $quickLayout.Controls.Add($btnOpenDepot, 0, 0)
 $quickLayout.Controls.Add($btnOpenLua, 1, 0)
@@ -347,6 +351,8 @@ $quickLayout.Controls.Add($btnClearLog, 0, 1)
 $quickLayout.Controls.Add($btnSaveLog, 1, 1)
 $quickLayout.Controls.Add($btnCopyPath, 0, 2)
 $quickLayout.Controls.Add($btnRevealConfig, 1, 2)
+$quickLayout.Controls.Add($btnAbout, 0, 3)
+$quickLayout.SetColumnSpan($btnAbout, 2)
 
 $groupQuick.Controls.Add($quickLayout)
 
@@ -361,7 +367,7 @@ $statusStrip.SizingGrip = $true
 $statusStrip.BackColor = $colorSurface
 $statusStrip.ForeColor = [System.Drawing.Color]::White
 $statusLabel = New-Object System.Windows.Forms.ToolStripStatusLabel
-$statusLabel.Text = 'Ready'
+$statusLabel.Text = "Ready • v$script:AppVersion"
 $statusStrip.Items.Add($statusLabel) | Out-Null
 
 $mainLayout.Controls.Add($topPanel, 0, 0)
@@ -376,7 +382,7 @@ function Set-UiBusy($busy) {
     $btnStop.Enabled    = -not $busy
     $btnRestart.Enabled = -not $busy
     $btnImport.Enabled  = -not $busy
-    if ($busy) { $statusLabel.Text = 'Working...' } else { $statusLabel.Text = 'Ready' }
+    if ($busy) { $statusLabel.Text = "Working... • v$script:AppVersion" } else { $statusLabel.Text = "Ready • v$script:AppVersion" }
 }
 
 function Update-SteamPathLabel {
@@ -547,6 +553,16 @@ $btnCopyPath.Add_Click({
     } catch {
         Add-Log -TextBox $rtbLog -Message ("Error: " + $_.Exception.Message)
     }
+})
+
+$btnAbout.Add_Click({
+    $message = @(
+        "Steam Lua v$script:AppVersion",
+        '',
+        'Simple tool to manage Steam and import manifests/Lua.',
+        'GitHub: https://github.com/kozaaaaczx/steam-lua'
+    ) -join "`r`n"
+    [System.Windows.Forms.MessageBox]::Show($message, 'About Steam Lua', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
 })
 
 $chkAlwaysOnTop.Add_CheckedChanged({
