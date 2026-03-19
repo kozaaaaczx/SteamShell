@@ -2,7 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # SteamShell v0.7.0 "The Professional Update"
-$script:AppVersion = '0.7.0'
+$script:AppVersion = '0.7.1'
 $script:SteamExeOverride = $null
 
 function Get-SteamExePath {
@@ -249,7 +249,7 @@ Add-Type -AssemblyName System.Windows.Forms
             </Grid.RowDefinitions>
             <Border Background="#0d1117" CornerRadius="10,10,0,0" Padding="16,0" BorderBrush="#161b22" BorderThickness="0,0,0,1">
               <Grid>
-                <TextBlock Text="Console" Foreground="#58a6ff" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" LetterSpacing="1"/>
+                <TextBlock Text="Console" Foreground="#58a6ff" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
                 <Button x:Name="btnClear" Content="Clear" Style="{StaticResource SideBtn}" HorizontalAlignment="Right" Foreground="#484f58" Margin="0" FontSize="11"/>
               </Grid>
             </Border>
