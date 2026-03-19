@@ -2,7 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # Steam functions (embedded so the EXE is self-contained)
-$script:AppVersion = '0.2.0'
+$script:AppVersion = '0.3.0'
 $script:SteamExeOverride = $null
 
 function Get-SteamExePath {
@@ -61,8 +61,7 @@ function Stop-SteamGracefully {
         Start-Sleep -Milliseconds 300
         $procs = Get-Process -Name steam, steamwebhelper, SteamService, SteamBootstrapper -ErrorAction SilentlyContinue
     } while ($procs -and (Get-Date) -lt $deadline)
-    $procs = Get-Process -Name steam, steamwebhelper, SteamService, SteamBootstrapper -ErrorAction SilentlyContinue
-    if ($procs) { foreach ($p in $procs) { try { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue } catch { } } }
+    
     if ($ForceClose) {
         $procs = Get-Process -Name steam, steamwebhelper, SteamService, SteamBootstrapper -ErrorAction SilentlyContinue
         if ($procs) {
@@ -77,7 +76,7 @@ function Start-Steam {
 }
 
 function Restart-Steam {
-    Stop-SteamGracefully -WaitSeconds 12
+    Stop-SteamGracefully -WaitSeconds 12 -ForceClose $true
     Start-Steam
 }
 
@@ -95,15 +94,12 @@ function Add-Log {
 
 # UI
 ${form} = New-Object System.Windows.Forms.Form
-${form}.Text = 'Steam lua'
-${form}.Size = New-Object System.Drawing.Size(720, 380)
-${form}.Text = "Steam lua v$script:AppVersion"
-${form}.Size = New-Object System.Drawing.Size(980, 560)
+${form}.Text = "Steam Lua v$script:AppVersion"
+${form}.Size = New-Object System.Drawing.Size(1020, 600)
 ${form}.StartPosition = 'CenterScreen'
 ${form}.MaximizeBox = $true
 ${form}.FormBorderStyle = 'Sizable'
-${form}.MinimumSize = New-Object System.Drawing.Size(640, 360)
-${form}.MinimumSize = New-Object System.Drawing.Size(860, 520)
+${form}.MinimumSize = New-Object System.Drawing.Size(900, 540)
 ${form}.BackColor = [System.Drawing.Color]::FromArgb(24, 24, 28)
 ${form}.ForeColor = [System.Drawing.Color]::White
 ${form}.Font = New-Object System.Drawing.Font('Segoe UI', 9)
@@ -112,29 +108,8 @@ $colorSurface = [System.Drawing.Color]::FromArgb(28, 28, 32)
 $colorSurfaceAlt = [System.Drawing.Color]::FromArgb(20, 20, 24)
 $colorAccent = [System.Drawing.Color]::FromArgb(88, 153, 255)
 $colorBorder = [System.Drawing.Color]::FromArgb(62, 62, 66)
-
-function New-SectionLabel([string]$text) {
-    $label = New-Object System.Windows.Forms.Label
-    $label.Text = $text
-    $label.Dock = 'Top'
-    $label.AutoSize = $false
-    $label.Height = 22
-    $label.Margin = New-Object System.Windows.Forms.Padding(8, 10, 8, 0)
-    $label.Font = New-Object System.Drawing.Font('Segoe UI Semibold', 9)
-    $label.ForeColor = [System.Drawing.Color]::Gainsboro
-    return $label
-}
-
-## Top bar: TableLayoutPanel with buttons
-$topPanel = New-Object System.Windows.Forms.TableLayoutPanel
-$topPanel.ColumnCount = 4
-$topPanel.RowCount = 1
-$topPanel.Dock = 'Top'
-$topPanel.Height = 56
-$topPanel.Padding = New-Object System.Windows.Forms.Padding(12, 12, 12, 6)
-$topPanel.BackColor = [System.Drawing.Color]::FromArgb(28, 28, 32)
-$topPanel.BackColor = $colorSurface
-for ($i = 0; $i -lt 4; $i++) { $null = $topPanel.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 25))) }
+$colorSuccess = [System.Drawing.Color]::FromArgb(80, 200, 120)
+$colorError = [System.Drawing.Color]::FromArgb(255, 100, 100)
 
 function New-DarkButton([string]$text) {
     $b = New-Object System.Windows.Forms.Button
@@ -144,7 +119,6 @@ function New-DarkButton([string]$text) {
     $b.FlatStyle = 'Flat'
     $b.BackColor = [System.Drawing.Color]::FromArgb(45, 45, 48)
     $b.ForeColor = [System.Drawing.Color]::White
-    $b.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(62, 62, 66)
     $b.FlatAppearance.BorderColor = $colorBorder
     $b.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(63, 63, 70)
     $b.FlatAppearance.MouseDownBackColor = [System.Drawing.Color]::FromArgb(51, 51, 55)
@@ -165,16 +139,28 @@ function New-AccentButton([string]$text) {
     return $b
 }
 
+## Top bar: TableLayoutPanel with buttons
+$topPanel = New-Object System.Windows.Forms.TableLayoutPanel
+$topPanel.ColumnCount = 5
+$topPanel.RowCount = 1
+$topPanel.Dock = 'Top'
+$topPanel.Height = 56
+$topPanel.Padding = New-Object System.Windows.Forms.Padding(12, 12, 12, 6)
+$topPanel.BackColor = $colorSurface
+for ($i = 0; $i -lt 5; $i++) { $null = $topPanel.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 20))) }
+
 $btnStart = New-DarkButton 'Start'
 $btnStop = New-DarkButton 'Stop'
 $btnRestart = New-DarkButton 'Restart'
-$btnImport = New-DarkButton 'Import'
+$btnKill = New-DarkButton 'Kill All'
+$btnKill.ForeColor = $colorError
 $btnImport = New-AccentButton 'Import'
 
 $topPanel.Controls.Add($btnStart, 0, 0)
 $topPanel.Controls.Add($btnStop, 1, 0)
 $topPanel.Controls.Add($btnRestart, 2, 0)
-$topPanel.Controls.Add($btnImport, 3, 0)
+$topPanel.Controls.Add($btnKill, 3, 0)
+$topPanel.Controls.Add($btnImport, 4, 0)
 
 ## Main layout
 $mainLayout = New-Object System.Windows.Forms.TableLayoutPanel
@@ -183,22 +169,21 @@ $mainLayout.RowCount = 2
 $mainLayout.Dock = 'Fill'
 [void]$mainLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 62)))
 [void]$mainLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Percent, 100)))
-[void]$mainLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 72)))
-[void]$mainLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 28)))
+[void]$mainLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 70)))
+[void]$mainLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 30)))
 
-## Log as RichTextBox filling the client area
+## Log
 $rtbLog = New-Object System.Windows.Forms.RichTextBox
 $rtbLog.Dock = 'Fill'
 $rtbLog.Margin = New-Object System.Windows.Forms.Padding(12, 6, 12, 0)
 $rtbLog.ReadOnly = $true
 $rtbLog.Font = New-Object System.Drawing.Font('Consolas', 10)
-$rtbLog.BackColor = [System.Drawing.Color]::FromArgb(18, 18, 22)
 $rtbLog.BackColor = $colorSurfaceAlt
 $rtbLog.ForeColor = [System.Drawing.Color]::Gainsboro
 $rtbLog.BorderStyle = 'None'
 $rtbLog.DetectUrls = $false
 
-## Right panel: options + quick actions
+## Right panel
 $sidePanel = New-Object System.Windows.Forms.Panel
 $sidePanel.Dock = 'Fill'
 $sidePanel.BackColor = $colorSurface
@@ -208,12 +193,13 @@ $sideLayout = New-Object System.Windows.Forms.TableLayoutPanel
 $sideLayout.Dock = 'Fill'
 $sideLayout.ColumnCount = 1
 $sideLayout.RowCount = 3
-[void]$sideLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 170)))
-[void]$sideLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 220)))
+[void]$sideLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 150)))
+[void]$sideLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 240)))
 [void]$sideLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Percent, 100)))
 
+# Group Steam Path
 $groupSteam = New-Object System.Windows.Forms.GroupBox
-$groupSteam.Text = 'Steam'
+$groupSteam.Text = 'Steam Configuration'
 $groupSteam.Dock = 'Fill'
 $groupSteam.BackColor = $colorSurface
 $groupSteam.ForeColor = [System.Drawing.Color]::Gainsboro
@@ -222,40 +208,28 @@ $groupSteam.Padding = New-Object System.Windows.Forms.Padding(10, 20, 10, 10)
 $steamLayout = New-Object System.Windows.Forms.TableLayoutPanel
 $steamLayout.Dock = 'Fill'
 $steamLayout.ColumnCount = 2
-$steamLayout.RowCount = 4
-[void]$steamLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 65)))
-[void]$steamLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 35)))
-[void]$steamLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 24)))
-[void]$steamLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 30)))
-[void]$steamLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 30)))
-[void]$steamLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 30)))
-
-$labelSteamPathTitle = New-Object System.Windows.Forms.Label
-$labelSteamPathTitle.Text = 'Steam.exe:'
-$labelSteamPathTitle.Dock = 'Fill'
-$labelSteamPathTitle.ForeColor = [System.Drawing.Color]::Silver
+$steamLayout.RowCount = 3
+[void]$steamLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 50)))
+[void]$steamLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 50)))
 
 $labelSteamPath = New-Object System.Windows.Forms.Label
-$labelSteamPath.Text = 'Auto-detect'
-$labelSteamPath.Dock = 'Fill'
+$labelSteamPath.Text = 'Auto-detecting...'
+$labelSteamPath.Dock = 'Top'
 $labelSteamPath.AutoEllipsis = $true
-$labelSteamPath.ForeColor = [System.Drawing.Color]::Gainsboro
+$labelSteamPath.ForeColor = [System.Drawing.Color]::Silver
 
-$btnBrowseSteam = New-DarkButton 'Browse...'
-$btnBrowseSteam.Margin = New-Object System.Windows.Forms.Padding(0, 0, 0, 0)
-$btnOpenSteamFolder = New-DarkButton 'Open folder'
-$btnOpenSteamFolder.Margin = New-Object System.Windows.Forms.Padding(0, 0, 0, 0)
+$btnBrowseSteam = New-DarkButton 'Browse'
+$btnOpenSteamFolder = New-DarkButton 'Folder'
 
-$steamLayout.Controls.Add($labelSteamPathTitle, 0, 0)
-$steamLayout.Controls.Add($labelSteamPath, 0, 1)
+$steamLayout.Controls.Add($labelSteamPath, 0, 0)
 $steamLayout.SetColumnSpan($labelSteamPath, 2)
-$steamLayout.Controls.Add($btnBrowseSteam, 1, 2)
-$steamLayout.Controls.Add($btnOpenSteamFolder, 1, 3)
-
+$steamLayout.Controls.Add($btnBrowseSteam, 0, 1)
+$steamLayout.Controls.Add($btnOpenSteamFolder, 1, 1)
 $groupSteam.Controls.Add($steamLayout)
 
+# Group Import Options
 $groupImport = New-Object System.Windows.Forms.GroupBox
-$groupImport.Text = 'Import options'
+$groupImport.Text = 'Import Options'
 $groupImport.Dock = 'Fill'
 $groupImport.BackColor = $colorSurface
 $groupImport.ForeColor = [System.Drawing.Color]::Gainsboro
@@ -264,66 +238,49 @@ $groupImport.Padding = New-Object System.Windows.Forms.Padding(10, 20, 10, 10)
 $importLayout = New-Object System.Windows.Forms.TableLayoutPanel
 $importLayout.Dock = 'Fill'
 $importLayout.ColumnCount = 2
-$importLayout.RowCount = 5
-[void]$importLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 60)))
-[void]$importLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 40)))
-[void]$importLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 24)))
-[void]$importLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 30)))
-[void]$importLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 30)))
-[void]$importLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 32)))
-[void]$importLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 32)))
+$importLayout.RowCount = 6
+for ($i = 0; $i -lt 6; $i++) { [void]$importLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 28))) }
 
-$chkImportManifest = New-Object System.Windows.Forms.CheckBox
-$chkImportManifest.Text = 'Manifests (.manifest)'
-$chkImportManifest.Checked = $true
-$chkImportManifest.Dock = 'Fill'
+$chkManifest = New-Object System.Windows.Forms.CheckBox
+$chkManifest.Text = 'Manifests'
+$chkManifest.Checked = $true
+$chkManifest.Dock = 'Fill'
 
-$chkImportLua = New-Object System.Windows.Forms.CheckBox
-$chkImportLua.Text = 'Lua scripts (.lua)'
-$chkImportLua.Checked = $true
-$chkImportLua.Dock = 'Fill'
+$chkLua = New-Object System.Windows.Forms.CheckBox
+$chkLua.Text = 'Lua Scripts'
+$chkLua.Checked = $true
+$chkLua.Dock = 'Fill'
+
+$chkBackup = New-Object System.Windows.Forms.CheckBox
+$chkBackup.Text = 'Backup before overwrite'
+$chkBackup.Checked = $true
+$chkBackup.Dock = 'Fill'
+$chkBackup.ForeColor = $colorAccent
 
 $labelWait = New-Object System.Windows.Forms.Label
 $labelWait.Text = 'Shutdown wait (s)'
 $labelWait.Dock = 'Fill'
-$labelWait.ForeColor = [System.Drawing.Color]::Silver
-
 $numWait = New-Object System.Windows.Forms.NumericUpDown
-$numWait.Minimum = 4
-$numWait.Maximum = 60
-$numWait.Value = 12
-$numWait.Dock = 'Fill'
-$numWait.BackColor = $colorSurfaceAlt
-$numWait.ForeColor = [System.Drawing.Color]::White
-$numWait.BorderStyle = 'FixedSingle'
-
-$chkForceClose = New-Object System.Windows.Forms.CheckBox
-$chkForceClose.Text = 'Force close if still running'
-$chkForceClose.Checked = $true
-$chkForceClose.Dock = 'Fill'
-$chkForceClose.Margin = New-Object System.Windows.Forms.Padding(0, 6, 0, 0)
+$numWait.Minimum = 4; $numWait.Maximum = 60; $numWait.Value = 12
+$numWait.BackColor = $colorSurfaceAlt; $numWait.ForeColor = [System.Drawing.Color]::White
 
 $chkAlwaysOnTop = New-Object System.Windows.Forms.CheckBox
 $chkAlwaysOnTop.Text = 'Always on top'
-$chkAlwaysOnTop.Checked = $false
 $chkAlwaysOnTop.Dock = 'Fill'
-$chkAlwaysOnTop.Margin = New-Object System.Windows.Forms.Padding(0, 6, 0, 0)
 
-$importLayout.Controls.Add($chkImportManifest, 0, 0)
-$importLayout.SetColumnSpan($chkImportManifest, 2)
-$importLayout.Controls.Add($chkImportLua, 0, 1)
-$importLayout.SetColumnSpan($chkImportLua, 2)
+$importLayout.Controls.Add($chkManifest, 0, 0)
+$importLayout.Controls.Add($chkLua, 1, 0)
+$importLayout.Controls.Add($chkBackup, 0, 1)
+$importLayout.SetColumnSpan($chkBackup, 2)
 $importLayout.Controls.Add($labelWait, 0, 2)
 $importLayout.Controls.Add($numWait, 1, 2)
-$importLayout.Controls.Add($chkForceClose, 0, 3)
-$importLayout.SetColumnSpan($chkForceClose, 2)
-$importLayout.Controls.Add($chkAlwaysOnTop, 0, 4)
-$importLayout.SetColumnSpan($chkAlwaysOnTop, 2)
+$importLayout.Controls.Add($chkAlwaysOnTop, 0, 3)
 
 $groupImport.Controls.Add($importLayout)
 
+# Group Quick Actions
 $groupQuick = New-Object System.Windows.Forms.GroupBox
-$groupQuick.Text = 'Quick actions'
+$groupQuick.Text = 'Quick Actions'
 $groupQuick.Dock = 'Fill'
 $groupQuick.BackColor = $colorSurface
 $groupQuick.ForeColor = [System.Drawing.Color]::Gainsboro
@@ -333,279 +290,204 @@ $quickLayout = New-Object System.Windows.Forms.TableLayoutPanel
 $quickLayout.Dock = 'Fill'
 $quickLayout.ColumnCount = 2
 $quickLayout.RowCount = 4
-[void]$quickLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 50)))
-[void]$quickLayout.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 50)))
-[void]$quickLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 36)))
-[void]$quickLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 36)))
-[void]$quickLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 36)))
-[void]$quickLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 36)))
+for ($i = 0; $i -lt 4; $i++) { [void]$quickLayout.RowStyles.Add((New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::Absolute, 34))) }
 
-$btnOpenDepot = New-DarkButton 'Open depotcache'
-$btnOpenLua = New-DarkButton 'Open stplug-in'
+$btnOpenDepot = New-DarkButton 'Depot cache'
+$btnOpenLua = New-DarkButton 'ST Plug-in'
 $btnClearLog = New-DarkButton 'Clear log'
 $btnSaveLog = New-DarkButton 'Save log'
-$btnCopyPath = New-DarkButton 'Copy Steam path'
-$btnRevealConfig = New-DarkButton 'Open config'
+$btnRevealConfig = New-DarkButton 'Config'
 $btnAbout = New-DarkButton 'About'
-
-$btnOpenDepot.Margin = New-Object System.Windows.Forms.Padding(3, 0, 3, 0)
-$btnOpenLua.Margin = New-Object System.Windows.Forms.Padding(3, 0, 3, 0)
-$btnClearLog.Margin = New-Object System.Windows.Forms.Padding(3, 0, 3, 0)
-$btnSaveLog.Margin = New-Object System.Windows.Forms.Padding(3, 0, 3, 0)
-$btnCopyPath.Margin = New-Object System.Windows.Forms.Padding(3, 0, 3, 0)
-$btnRevealConfig.Margin = New-Object System.Windows.Forms.Padding(3, 0, 3, 0)
-$btnAbout.Margin = New-Object System.Windows.Forms.Padding(3, 0, 3, 0)
 
 $quickLayout.Controls.Add($btnOpenDepot, 0, 0)
 $quickLayout.Controls.Add($btnOpenLua, 1, 0)
 $quickLayout.Controls.Add($btnClearLog, 0, 1)
 $quickLayout.Controls.Add($btnSaveLog, 1, 1)
-$quickLayout.Controls.Add($btnCopyPath, 0, 2)
-$quickLayout.Controls.Add($btnRevealConfig, 1, 2)
-$quickLayout.Controls.Add($btnAbout, 0, 3)
-$quickLayout.SetColumnSpan($btnAbout, 2)
+$quickLayout.Controls.Add($btnRevealConfig, 0, 2)
+$quickLayout.Controls.Add($btnAbout, 1, 2)
 
 $groupQuick.Controls.Add($quickLayout)
 
-$sideLayout.Controls.Add($groupSteam, 0, 0)
-$sideLayout.Controls.Add($groupImport, 0, 1)
-$sideLayout.Controls.Add($groupQuick, 0, 2)
+$sideLayout.Controls.AddRange(@($groupSteam, $groupImport, $groupQuick))
 $sidePanel.Controls.Add($sideLayout)
 
-## Status strip at bottom
+## Status strip
 $statusStrip = New-Object System.Windows.Forms.StatusStrip
-$statusStrip.SizingGrip = $true
-$statusStrip.BackColor = [System.Drawing.Color]::FromArgb(28, 28, 32)
 $statusStrip.BackColor = $colorSurface
 $statusStrip.ForeColor = [System.Drawing.Color]::White
+
 $statusLabel = New-Object System.Windows.Forms.ToolStripStatusLabel
-$statusLabel.Text = 'Ready'
-$statusLabel.Text = "Ready • v$script:AppVersion"
+$statusLabel.Text = "Steam Lua v$script:AppVersion • Ready"
 $statusStrip.Items.Add($statusLabel) | Out-Null
 
-${form}.Controls.AddRange(@($rtbLog, $topPanel, $statusStrip))
-$mainLayout.Controls.Add($topPanel, 0, 0)
-$mainLayout.SetColumnSpan($topPanel, 2)
+$statusSteam = New-Object System.Windows.Forms.ToolStripStatusLabel
+$statusSteam.Alignment = [System.Windows.Forms.ToolStripItemAlignment]::Right
+$statusSteam.Text = "STEAM: CHECKING..."
+$statusStrip.Items.Add($statusSteam) | Out-Null
+
 $mainLayout.Controls.Add($rtbLog, 0, 1)
 $mainLayout.Controls.Add($sidePanel, 1, 1)
+${form}.Controls.AddRange(@($mainLayout, $topPanel, $statusStrip))
 
-${form}.Controls.AddRange(@($mainLayout, $statusStrip))
+# Timer for Steam Status
+$timerStatus = New-Object System.Windows.Forms.Timer
+$timerStatus.Interval = 3000
 
+function Update-SteamStatus {
+    $procs = Get-Process -Name steam -ErrorAction SilentlyContinue
+    if ($procs) {
+        $statusSteam.Text = "STEAM: RUNNING"
+        $statusSteam.ForeColor = $colorSuccess
+    } else {
+        $statusSteam.Text = "STEAM: STOPPED"
+        $statusSteam.ForeColor = $colorError
+    }
+}
+
+$timerStatus.Add_Tick({ Update-SteamStatus })
+
+# Logic
 function Set-UiBusy($busy) {
-    $btnStart.Enabled = -not $busy
-    $btnStop.Enabled = -not $busy
-    $btnRestart.Enabled = -not $busy
-    $btnImport.Enabled = -not $busy
-    if ($busy) { $statusLabel.Text = 'Working...' } else { $statusLabel.Text = 'Ready' }
-    if ($busy) { $statusLabel.Text = "Working... • v$script:AppVersion" } else { $statusLabel.Text = "Ready • v$script:AppVersion" }
+    foreach ($ctrl in @($btnStart, $btnStop, $btnRestart, $btnKill, $btnImport)) { $ctrl.Enabled = -not $busy }
+    $statusLabel.Text = if ($busy) { "Working... • v$script:AppVersion" } else { "Ready • v$script:AppVersion" }
 }
 
 function Update-SteamPathLabel {
-    try {
-        $path = Get-SteamExePath
-        $labelSteamPath.Text = $path
-    }
-    catch {
-        $labelSteamPath.Text = 'Not found'
-    }
+    try { $labelSteamPath.Text = Get-SteamExePath } catch { $labelSteamPath.Text = 'Not found' }
 }
 
 function Open-Folder([string]$path, [string]$label) {
-    if (-not (Test-Path $path)) {
-        Add-Log -TextBox $rtbLog -Message ("Missing folder: " + $path)
-        return
-    }
-    Add-Log -TextBox $rtbLog -Message ("Opening " + $label + "...")
+    if (-not (Test-Path $path)) { Add-Log -TextBox $rtbLog -Message "Missing folder: $path"; return }
+    Add-Log -TextBox $rtbLog -Message "Opening $label..."
     Start-Process -FilePath $path | Out-Null
 }
 
-# Handlery
+function Backup-File([string]$filePath) {
+    if (Test-Path $filePath) {
+        $bakPath = $filePath + ".bak"
+        Copy-Item -LiteralPath $filePath -Destination $bakPath -Force
+        return $true
+    }
+    return $false
+}
+
+# Handlers
 $btnStart.Add_Click({
-        try {
-            Set-UiBusy $true
-            Add-Log -TextBox $rtbLog -Message 'Starting Steam...'
-            Start-Steam
-            Add-Log -TextBox $rtbLog -Message 'Steam started.'
-        }
-        catch {
-            Add-Log -TextBox $rtbLog -Message ("Error: " + $_.Exception.Message)
-        }
-        finally {
-            Set-UiBusy $false
-        }
-    })
+    try {
+        Set-UiBusy $true
+        Add-Log -TextBox $rtbLog -Message 'Starting Steam...'
+        Start-Steam
+        Add-Log -TextBox $rtbLog -Message 'Steam start command sent.'
+    } catch { Add-Log -TextBox $rtbLog -Message "Error: $($_.Exception.Message)" }
+    finally { Set-UiBusy $false; Update-SteamStatus }
+})
 
 $btnStop.Add_Click({
-        try {
-            Set-UiBusy $true
-            Add-Log -TextBox $rtbLog -Message 'Closing Steam...'
-            Stop-SteamGracefully -WaitSeconds 12
-            Stop-SteamGracefully -WaitSeconds ([int]$numWait.Value) -ForceClose $chkForceClose.Checked
-            Add-Log -TextBox $rtbLog -Message 'Steam closed.'
-        }
-        catch {
-            Add-Log -TextBox $rtbLog -Message ("Error: " + $_.Exception.Message)
-        }
-        finally {
-            Set-UiBusy $false
-        }
-    })
+    try {
+        Set-UiBusy $true
+        Add-Log -TextBox $rtbLog -Message 'Closing Steam gracefully...'
+        Stop-SteamGracefully -WaitSeconds ([int]$numWait.Value) -ForceClose $false
+        Add-Log -TextBox $rtbLog -Message 'Steam closed.'
+    } catch { Add-Log -TextBox $rtbLog -Message "Error: $($_.Exception.Message)" }
+    finally { Set-UiBusy $false; Update-SteamStatus }
+})
 
 $btnRestart.Add_Click({
-        try {
-            Set-UiBusy $true
-            Add-Log -TextBox $rtbLog -Message 'Restarting Steam...'
-            Restart-Steam
-            Stop-SteamGracefully -WaitSeconds ([int]$numWait.Value) -ForceClose $chkForceClose.Checked
-            Start-Steam
-            Add-Log -TextBox $rtbLog -Message 'Restart completed.'
+    try {
+        Set-UiBusy $true
+        Add-Log -TextBox $rtbLog -Message 'Restarting Steam...'
+        Restart-Steam
+        Add-Log -TextBox $rtbLog -Message 'Restart completed.'
+    } catch { Add-Log -TextBox $rtbLog -Message "Error: $($_.Exception.Message)" }
+    finally { Set-UiBusy $false; Update-SteamStatus }
+})
+
+$btnKill.Add_Click({
+    try {
+        Set-UiBusy $true
+        Add-Log -TextBox $rtbLog -Message 'Killing all Steam processes...'
+        $procs = Get-Process -Name steam, steamwebhelper, SteamService, SteamBootstrapper -ErrorAction SilentlyContinue
+        if ($procs) {
+            foreach ($p in $procs) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+            Add-Log -TextBox $rtbLog -Message "Killed $($procs.Count) processes."
+        } else {
+            Add-Log -TextBox $rtbLog -Message "No Steam processes found."
         }
-        catch {
-            Add-Log -TextBox $rtbLog -Message ("Error: " + $_.Exception.Message)
-        }
-        finally {
-            Set-UiBusy $false
-        }
-    })
+    } catch { Add-Log -TextBox $rtbLog -Message "Error: $($_.Exception.Message)" }
+    finally { Set-UiBusy $false; Update-SteamStatus }
+})
 
 $btnImport.Add_Click({
-        try {
-            Set-UiBusy $true
-        
-            if (-not $chkImportManifest.Checked -and -not $chkImportLua.Checked) {
-                Add-Log -TextBox $rtbLog -Message 'Select at least one import type.'
-                return
-            }
-
-            $manifestSrcs = @()
-            $luaSrcs = @()
-
-            if ($chkImportManifest.Checked) {
-                $manifestDialog = New-Object System.Windows.Forms.OpenFileDialog
-                $manifestDialog.Title = 'Select .manifest files'
-                $manifestDialog.Filter = 'Manifest (*.manifest)|*.manifest'
-                $manifestDialog.CheckFileExists = $true
-                $manifestDialog.Multiselect = $true
-                if ($manifestDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-                    $manifestSrcs = @($manifestDialog.FileNames)
-                }
-                else {
-                    Add-Log -TextBox $rtbLog -Message 'Import cancelled (manifest).'
-                    return
-                }
-            }
-
-            if ($chkImportLua.Checked) {
-                $luaDialog = New-Object System.Windows.Forms.OpenFileDialog
-                $luaDialog.Title = 'Select .lua files'
-                $luaDialog.Filter = 'Lua (*.lua)|*.lua'
-                $luaDialog.CheckFileExists = $true
-                $luaDialog.Multiselect = $true
-                if ($luaDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-                    $luaSrcs = @($luaDialog.FileNames)
-                }
-                else {
-                    Add-Log -TextBox $rtbLog -Message 'Import cancelled (lua).'
-                    return
-                }
-            }
-
-            $manifestDstDir = 'C:\Program Files (x86)\Steam\depotcache'
-            $luaDstDir = 'C:\Program Files (x86)\Steam\config\stplug-in'
-
-            if (-not (Test-Path $manifestDstDir)) { New-Item -ItemType Directory -Path $manifestDstDir -Force | Out-Null }
-            if (-not (Test-Path $luaDstDir)) { New-Item -ItemType Directory -Path $luaDstDir -Force | Out-Null }
-
-            if ($manifestSrcs.Count -gt 0) {
-                Add-Log -TextBox $rtbLog -Message ("Copying manifests (" + $manifestSrcs.Count + ")...")
-                foreach ($m in $manifestSrcs) {
-                    $manifestDst = Join-Path $manifestDstDir ([System.IO.Path]::GetFileName($m))
-                    Copy-Item -LiteralPath $m -Destination $manifestDst -Force
-                }
-            }
-
-            if ($luaSrcs.Count -gt 0) {
-                Add-Log -TextBox $rtbLog -Message ("Copying lua files (" + $luaSrcs.Count + ")...")
-                foreach ($l in $luaSrcs) {
-                    $luaDst = Join-Path $luaDstDir ([System.IO.Path]::GetFileName($l))
-                    Copy-Item -LiteralPath $l -Destination $luaDst -Force
-                }
-            }
-
-            Add-Log -TextBox $rtbLog -Message 'Import completed.'
+    try {
+        Set-UiBusy $true
+        if (-not $chkManifest.Checked -and -not $chkLua.Checked) {
+            Add-Log -TextBox $rtbLog -Message 'Select at least one import type.'; return
         }
-        catch {
-            Add-Log -TextBox $rtbLog -Message ("Error: " + $_.Exception.Message)
+
+        $manifestSrcs = @(); $luaSrcs = @()
+        if ($chkManifest.Checked) {
+            $d = New-Object System.Windows.Forms.OpenFileDialog
+            $d.Title = 'Select .manifest files'; $d.Filter = 'Manifest (*.manifest)|*.manifest'; $d.Multiselect = $true
+            if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $manifestSrcs = @($d.FileNames) } else { return }
         }
-        finally {
-            Set-UiBusy $false
+        if ($chkLua.Checked) {
+            $d = New-Object System.Windows.Forms.OpenFileDialog
+            $d.Title = 'Select .lua files'; $d.Filter = 'Lua (*.lua)|*.lua'; $d.Multiselect = $true
+            if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $luaSrcs = @($d.FileNames) } else { return }
         }
-    })
+
+        $manifestDstDir = 'C:\Program Files (x86)\Steam\depotcache'
+        $luaDstDir = 'C:\Program Files (x86)\Steam\config\stplug-in'
+
+        if (-not (Test-Path $manifestDstDir)) { New-Item -ItemType Directory -Path $manifestDstDir -Force | Out-Null }
+        if (-not (Test-Path $luaDstDir)) { New-Item -ItemType Directory -Path $luaDstDir -Force | Out-Null }
+
+        if ($manifestSrcs.Count -gt 0) {
+            Add-Log -TextBox $rtbLog -Message "Importing manifests ($($manifestSrcs.Count))..."
+            foreach ($src in $manifestSrcs) {
+                $dst = Join-Path $manifestDstDir ([System.IO.Path]::GetFileName($src))
+                if ($chkBackup.Checked) { Backup-File $dst }
+                Copy-Item -LiteralPath $src -Destination $dst -Force
+            }
+        }
+
+        if ($luaSrcs.Count -gt 0) {
+            Add-Log -TextBox $rtbLog -Message "Importing lua scripts ($($luaSrcs.Count))..."
+            foreach ($src in $luaSrcs) {
+                $dst = Join-Path $luaDstDir ([System.IO.Path]::GetFileName($src))
+                if ($chkBackup.Checked) { Backup-File $dst }
+                Copy-Item -LiteralPath $src -Destination $dst -Force
+            }
+        }
+        Add-Log -TextBox $rtbLog -Message 'Import successful.'
+    } catch { Add-Log -TextBox $rtbLog -Message "Import Error: $($_.Exception.Message)" }
+    finally { Set-UiBusy $false }
+})
 
 $btnBrowseSteam.Add_Click({
-        $dialog = New-Object System.Windows.Forms.OpenFileDialog
-        $dialog.Title = 'Select steam.exe'
-        $dialog.Filter = 'Steam (steam.exe)|steam.exe'
-        $dialog.CheckFileExists = $true
-        if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { return }
-        $script:SteamExeOverride = $dialog.FileName
+    $d = New-Object System.Windows.Forms.OpenFileDialog
+    $d.Title = 'Select steam.exe'; $d.Filter = 'Steam (steam.exe)|steam.exe'
+    if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+        $script:SteamExeOverride = $d.FileName
         Update-SteamPathLabel
-        Add-Log -TextBox $rtbLog -Message ("Steam path set to: " + $dialog.FileName)
-    })
+        Add-Log -TextBox $rtbLog -Message "Path override: $($d.FileName)"
+    }
+})
 
-$btnOpenSteamFolder.Add_Click({
-        try {
-            $dir = Get-SteamInstallDir
-            Open-Folder -path $dir -label 'Steam folder'
-        }
-        catch {
-            Add-Log -TextBox $rtbLog -Message ("Error: " + $_.Exception.Message)
-        }
-    })
-
+$btnOpenSteamFolder.Add_Click({ try { Open-Folder -path (Get-SteamInstallDir) -label 'Steam' } catch { } })
 $btnOpenDepot.Add_Click({ Open-Folder -path 'C:\Program Files (x86)\Steam\depotcache' -label 'depotcache' })
 $btnOpenLua.Add_Click({ Open-Folder -path 'C:\Program Files (x86)\Steam\config\stplug-in' -label 'stplug-in' })
 $btnRevealConfig.Add_Click({ Open-Folder -path 'C:\Program Files (x86)\Steam\config' -label 'config' })
-
 $btnClearLog.Add_Click({ $rtbLog.Clear() })
-
-$btnSaveLog.Add_Click({
-        $dialog = New-Object System.Windows.Forms.SaveFileDialog
-        $dialog.Title = 'Save log'
-        $dialog.Filter = 'Text (*.txt)|*.txt'
-        $dialog.FileName = 'steam-lua-log.txt'
-        if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { return }
-        $rtbLog.SaveFile($dialog.FileName, [System.Windows.Forms.RichTextBoxStreamType]::PlainText)
-        Add-Log -TextBox $rtbLog -Message ("Log saved: " + $dialog.FileName)
-    })
-
-$btnCopyPath.Add_Click({
-        try {
-            $path = Get-SteamExePath
-            [System.Windows.Forms.Clipboard]::SetText($path)
-            Add-Log -TextBox $rtbLog -Message 'Steam path copied.'
-        }
-        catch {
-            Add-Log -TextBox $rtbLog -Message ("Error: " + $_.Exception.Message)
-        }
-    })
-
+$btnAlwaysOnTop.Add_CheckedChanged({ ${form}.TopMost = $chkAlwaysOnTop.Checked })
 $btnAbout.Add_Click({
-        $message = @(
-            "Steam Lua v$script:AppVersion",
-            '',
-            'Simple tool to manage Steam and import manifests/Lua.',
-            'GitHub: https://github.com/kozaaaaczx/steam-lua'
-        ) -join "`r`n"
-        [System.Windows.Forms.MessageBox]::Show($message, 'About Steam Lua', [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
-    })
-
-$chkAlwaysOnTop.Add_CheckedChanged({
-        ${form}.TopMost = $chkAlwaysOnTop.Checked
-    })
+    $msg = "Steam Lua Manager v$script:AppVersion`n`nNew Features in v0.3.0:`n- Steam Status Monitor`n- Backup before Import`n- Kill All processes`n- Stability improvements`n`nGitHub: https://github.com/kozaaaaczx/steam-lua"
+    [System.Windows.Forms.MessageBox]::Show($msg, 'About', 0, 64) | Out-Null
+})
 
 # Init
 Update-SteamPathLabel
+Update-SteamStatus
+$timerStatus.Start()
 
-# Show
 [void]${form}.ShowDialog()

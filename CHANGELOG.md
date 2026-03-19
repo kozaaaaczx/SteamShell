@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0] - 2026-03-20
+### Added
+- **Steam Status Monitor**: Real-time status display in the status bar (Running/Stopped).
+- **Import Backup**: Option to automatically create `.bak` copies of files before they are overwritten.
+- **Kill All Button**: Emergency button to force-close all Steam-related processes immediately.
+- Improved UI layout and logic responsiveness.
+- Real-time logging of folder operations and backups.
+
 ## [0.2.0] - 2026-02-03
 ### Added
 - Improved GUI layout and responsiveness.
