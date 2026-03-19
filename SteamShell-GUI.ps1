@@ -1,9 +1,10 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# SteamShell v1.2.0 "The Reliability Update"
-$script:AppVersion = '1.2.0'
+# SteamShell v1.3.0 "The Production Build"
+$script:AppVersion = '1.3.0'
 $script:SteamExeCache = $null
+$script:SteamDirCache = $null
 
 function Get-SteamExePath {
     if ($script:SteamExeCache -and (Test-Path $script:SteamExeCache)) { return $script:SteamExeCache }
@@ -26,7 +27,13 @@ function Get-SteamExePath {
     throw "steam.exe not found."
 }
 
-function Get-SteamInstallDir { try { Split-Path (Get-SteamExePath) -Parent } catch { $null } }
+function Get-SteamInstallDir { 
+    if ($script:SteamDirCache -and (Test-Path $script:SteamDirCache)) { return $script:SteamDirCache }
+    try { 
+        $script:SteamDirCache = Split-Path (Get-SteamExePath) -Parent
+        return $script:SteamDirCache
+    } catch { return $null } 
+}
 
 function Stop-SteamGracefully([int]$Wait=12) {
     try { $exe = Get-SteamExePath; & $exe -shutdown | Out-Null } catch {}
@@ -159,6 +166,10 @@ Add-Type -AssemblyName System.Windows.Forms
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="bd" Property="Background" Value="#30363d"/></Trigger>
               <Trigger Property="IsPressed" Value="True"><Setter TargetName="bd" Property="Opacity" Value="0.7"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="bd" Property="Opacity" Value="0.4"/>
+                <Setter Property="Cursor" Value="Arrow"/>
+              </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -175,7 +186,7 @@ Add-Type -AssemblyName System.Windows.Forms
           <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
           <StackPanel Grid.Row="0" Margin="24,32,24,32">
             <TextBlock Text="SteamShell" FontSize="20" FontWeight="Bold" Foreground="White"/>
-            <TextBlock Text="Stability Environment" FontSize="11" Foreground="{StaticResource TextDim}" Margin="2,2,0,0"/>
+            <TextBlock Text="Production Environment" FontSize="11" Foreground="{StaticResource TextDim}" Margin="2,2,0,0"/>
           </StackPanel>
           <StackPanel Grid.Row="1" Margin="14,0">
             <RadioButton x:Name="navDashboard" Content="&#xE80F;" Tag="Home" Style="{StaticResource NavBtn}" IsChecked="True"/>
@@ -225,7 +236,7 @@ Add-Type -AssemblyName System.Windows.Forms
                   <Grid.RowDefinitions><RowDefinition Height="40"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                   <Border Background="{StaticResource PanelBrush}" CornerRadius="8,8,0,0" Padding="16,0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
                     <Grid>
-                      <TextBlock Text="Output Terminal" VerticalAlignment="Center" Foreground="{StaticResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
+                      <TextBlock Text="Terminal" VerticalAlignment="Center" Foreground="{StaticResource TextDim}" FontSize="11" FontWeight="SemiBold"/>
                        <Button x:Name="btnClear" Content="Clear Buffer" Style="{StaticResource SimpleBtn}" Height="24" Padding="12,0" FontSize="10" HorizontalAlignment="Right" Margin="0" BorderThickness="0"/>
                     </Grid>
                   </Border>
@@ -248,7 +259,7 @@ Add-Type -AssemblyName System.Windows.Forms
               <TextBlock Text="Accounts" FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,0,0,32"/>
               <Border Style="{StaticResource FlatCard}" Padding="32">
                 <StackPanel>
-                  <TextBlock Text="Identity Vault" Foreground="{StaticResource TextDim}" Margin="0,0,0,12"/>
+                  <TextBlock Text="Account Vault" Foreground="{StaticResource TextDim}" Margin="0,0,0,12"/>
                   <ComboBox x:Name="cmbAccounts" Background="#010409" Foreground="White" Height="40" Padding="12" FontSize="13"/>
                   <Button x:Name="btnSwitch" Content="Switch Account" Background="#1f6feb" BorderThickness="0" Style="{StaticResource SimpleBtn}" Margin="0,24,0,0" Height="40"/>
                 </StackPanel>
@@ -260,8 +271,8 @@ Add-Type -AssemblyName System.Windows.Forms
           <Grid x:Name="pageFiles" Visibility="Collapsed">
             <StackPanel MaxWidth="700" HorizontalAlignment="Left">
               <TextBlock Text="Files" FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,0,0,32"/>
-              <Button x:Name="btnImport" Content="&#xE8B5; Open Deployment Selector" Style="{StaticResource SimpleBtn}" Height="46" HorizontalAlignment="Left" Margin="0,0,0,32"/>
-              <TextBlock Text="System Bridges" Foreground="{StaticResource TextDim}" FontSize="11" FontWeight="Bold" Margin="0,0,0,16"/>
+              <Button x:Name="btnImport" Content="&#xE8B5; Open File Selector" Style="{StaticResource SimpleBtn}" Height="46" HorizontalAlignment="Left" Margin="0,0,0,32"/>
+              <TextBlock Text="Storage Locations" Foreground="{StaticResource TextDim}" FontSize="11" FontWeight="Bold" Margin="0,0,0,16"/>
               <WrapPanel>
                  <Button x:Name="btnDepot"  Content="Depot Cache" Style="{StaticResource SimpleBtn}" Margin="0,0,12,12"/>
                  <Button x:Name="btnLua"    Content="LUA Assets" Style="{StaticResource SimpleBtn}" Margin="0,0,12,12"/>
@@ -277,8 +288,8 @@ Add-Type -AssemblyName System.Windows.Forms
               <Border Style="{StaticResource FlatCard}" Padding="32">
                 <StackPanel>
                   <CheckBox x:Name="chkBackup" Content="Automatic File Backups" IsChecked="True" Foreground="White" Margin="0,0,0,12"/>
-                  <CheckBox x:Name="chkOnTop" Content="Keep Shell Topmost" Foreground="White" Margin="0,0,0,24"/>
-                  <Button x:Name="btnBrowse" Content="Modify steam.exe Link" Style="{StaticResource SimpleBtn}"/>
+                  <CheckBox x:Name="chkOnTop" Content="Keep UI Topmost" Foreground="White" Margin="0,0,0,24"/>
+                  <Button x:Name="btnBrowse" Content="Modify steam.exe Path" Style="{StaticResource SimpleBtn}"/>
                 </StackPanel>
               </Border>
             </StackPanel>
@@ -324,7 +335,7 @@ $navSettings.Add_Checked({ Switch-Page $pSettings })
 function Write-Log([string]$msg) {
     if (!$txtLog) { return }
     $ts = (Get-Date).ToString('HH:mm:ss')
-    $prefix = if ($msg -match '^Error|FAILED') { "[ERROR] " } else { "[INFO] " }
+    $prefix = if ($msg -match '^(Error|FAILED)') { "[ERROR] " } else { "[INFO] " }
     $txtLog.AppendText("[$ts] $prefix$msg`n")
     if ($svLog) { $svLog.ScrollToEnd() }
 }
@@ -383,50 +394,88 @@ function Import-Files($ps) {
     }
 }
 
+function Invoke-WithDisable($btn, $action) {
+    $btn.IsEnabled = $false
+    try { & $action } finally { $btn.IsEnabled = $true }
+}
+
 # Handlers
 $titleBar.Add_MouseLeftButtonDown({ $w.DragMove() })
 $btnMin.Add_Click({ $w.WindowState = 'Minimized' })
 $btnClose.Add_Click({ $w.Close() })
 
-$btnStart.Add_Click({ try { Start-Steam; Write-Log "Initializing Steam Engine..." } catch { Write-Log "Error: $($_.Exception.Message)" } })
-$btnStop.Add_Click({ try { Stop-SteamGracefully 12; Write-Log "Signaling shutdown..." } catch { Write-Log "Error: $($_.Exception.Message)" } })
-$btnRestart.Add_Click({ 
-    try { 
-        Write-Log "Restarting Steam cycle..."; Restart-Steam
-        Start-Sleep -Seconds 1; Update-Accounts; Update-Status
-    } catch { Write-Log "Error: $($_.Exception.Message)" } 
-})
+$btnStart.Add_Click({ Invoke-WithDisable $btnStart {
+    try { Start-Steam; Write-Log "Starting Steam..." } catch { Write-Log "Error: $($_.Exception.Message)" } 
+} })
 
-$btnSwitch.Add_Click({
+$btnStop.Add_Click({ Invoke-WithDisable $btnStop {
+    try { Stop-SteamGracefully 12; Write-Log "Signaling shutdown..." } catch { Write-Log "Error: $($_.Exception.Message)" } 
+} })
+
+$btnRestart.Add_Click({ Invoke-WithDisable $btnRestart {
+    try { 
+        Write-Log "Restarting Steam cycle..."; Stop-SteamGracefully 15; Start-Steam
+        Start-Sleep -Seconds 1; Update-Accounts; Update-Status
+        Write-Log "Steam restarted successfully."
+    } catch { Write-Log "Error: $($_.Exception.Message)" } 
+} })
+
+$btnSwitch.Add_Click({ Invoke-WithDisable $btnSwitch {
     if ($cmbAccounts.SelectedIndex -ge 0) {
         $a = $script:AccList[$cmbAccounts.SelectedIndex]
         Set-ItemProperty "HKCU:\Software\Valve\Steam" -Name "AutoLoginUser" -Value $a.name
-        Write-Log "Switching Identity: $($a.name)..."; Restart-Steam
-        Start-Sleep -Seconds 2; Update-Accounts; Update-Status
+        Write-Log "Switching Identity: $($a.name)..."
+        Stop-SteamGracefully 15
+        Start-Steam
+        Start-Sleep -Seconds 1; Update-Accounts; Update-Status
+        Write-Log "Account switch completed."
     } else {
-        Write-Log "Error: No account selected."
+        Write-Log "FAILED: No account selected."
     }
-})
+} })
 
 $btnClear.Add_Click({ $txtLog.Text = "" })
-$btnImport.Add_Click({
+
+$btnImport.Add_Click({ Invoke-WithDisable $btnImport {
     $dlg = New-Object System.Windows.Forms.OpenFileDialog; $dlg.Multiselect=$true; $dlg.Filter="Assets|*.manifest;*.lua"
-    if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Import-Files $dlg.FileNames; Write-Log "Deployment task finished." }
-})
+    if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Import-Files $dlg.FileNames; Write-Log "File import process completed." }
+} })
+
 $btnAbout.Add_Click({ [System.Windows.MessageBox]::Show("SteamShell Stable v$script:AppVersion`ngithub.com/kozaaaaczx/steam-lua","SteamShell",0,64) })
 $chkOnTop.Add_Checked({ $w.Topmost=$true }); $chkOnTop.Add_Unchecked({ $w.Topmost=$false })
 
-$btnDepot.Add_Click({ try { Start-Process (Join-Path (Get-SteamInstallDir) 'depotcache') } catch { Write-Log "FAILED: Cannot open depotcache." } })
-$btnLua.Add_Click({ try { Start-Process (Join-Path (Get-SteamInstallDir) 'config\stplug-in') } catch { Write-Log "FAILED: Cannot open stplug-in directory." } })
-$btnConfig.Add_Click({ try { Start-Process (Join-Path (Get-SteamInstallDir) 'config') } catch { Write-Log "FAILED: Cannot open config directory." } })
+$btnDepot.Add_Click({ 
+    $path = Join-Path (Get-SteamInstallDir) 'depotcache'
+    if (Test-Path $path) { Start-Process $path } else { Write-Log "FAILED: Path does not exist: $path" }
+})
+$btnLua.Add_Click({ 
+    $path = Join-Path (Get-SteamInstallDir) 'config\stplug-in'
+    if (Test-Path $path) { Start-Process $path } else { Write-Log "FAILED: Path does not exist: $path" }
+})
+$btnConfig.Add_Click({ 
+    $path = Join-Path (Get-SteamInstallDir) 'config'
+    if (Test-Path $path) { Start-Process $path } else { Write-Log "FAILED: Path does not exist: $path" }
+})
 $btnBrowse.Add_Click({
     $dlg = New-Object System.Windows.Forms.OpenFileDialog; $dlg.Filter="steam.exe|steam.exe"
-    if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $script:SteamExeCache=$dlg.FileName; Write-Log "Path Overridden: $($dlg.FileName)" }
+    if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { 
+        $script:SteamExeCache=$dlg.FileName
+        $script:SteamDirCache = Split-Path $dlg.FileName -Parent
+        Write-Log "Using custom Steam path: $($script:SteamExeCache)"
+    }
 })
 
 # DragDrop
 $w.Add_DragEnter({ param($s,$e) if($e.Data.GetDataPresent([System.Windows.DataFormats]::FileDrop)){$e.Effects='Copy'} })
-$w.Add_Drop({ param($s,$e) Import-Files ($e.Data.GetData([System.Windows.DataFormats]::FileDrop)) })
+$w.Add_Drop({ param($s,$e) 
+    $files = $e.Data.GetData([System.Windows.DataFormats]::FileDrop)
+    $files = $files | Where-Object { $_ -match '\.lua$|\.manifest$' }
+    if ($files) {
+        Import-Files $files
+    } else {
+        Write-Log "FAILED: Dropped files are not supported."
+    }
+})
 
 # Timer & Close Safety
 $t = New-Object System.Windows.Threading.DispatcherTimer; $t.Interval=[TimeSpan]::FromSeconds(3)
@@ -435,5 +484,6 @@ $t.Start()
 $w.Add_Closed({ $t.Stop(); Write-Log "Exiting..." })
 
 # Startup
-Update-Accounts; Update-Status; Write-Log "System v$script:AppVersion Ready."
+Update-Accounts; Update-Status; Write-Log "System v$script:AppVersion initialized."
+if ($script:SteamExeCache) { Write-Log "Using custom Steam path: $($script:SteamExeCache)" }
 $w.ShowDialog() | Out-Null
