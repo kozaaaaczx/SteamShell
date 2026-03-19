@@ -2,7 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # Steam functions (embedded so the EXE is self-contained)
-$script:AppVersion = '0.4.0'
+$script:AppVersion = '0.4.1'
 $script:SteamExeOverride = $null
 
 function Get-SteamExePath {
@@ -301,10 +301,13 @@ function Get-SteamAccounts {
         $content = Get-Content $vdfPath
         $currentAccount = $null
         foreach ($line in $content) {
-            if ($line -match '^\s*"(\d+)"') { $currentAccount = @{ id = $matches[1] } }
-            if ($line -match '"AccountName"\s+"([^"]+)"') { $currentAccount.name = $matches[1] }
-            if ($line -match '"PersonaName"\s+"([^"]+)"') { $currentAccount.persona = $matches[1] }
-            if ($line -match '}') { if ($currentAccount.name) { $accounts += $currentAccount }; $currentAccount = $null }
+            if ($line -match '^\s*"(\d{5,})"') { $currentAccount = @{ id = $matches[1] } }
+            elseif ($line -match '"AccountName"\s+"([^"]+)"' -and $null -ne $currentAccount) { $currentAccount.name = $matches[1] }
+            elseif ($line -match '"PersonaName"\s+"([^"]+)"' -and $null -ne $currentAccount) { $currentAccount.persona = $matches[1] }
+            elseif ($line -match '^\s*}' -and $null -ne $currentAccount) { 
+                if ($currentAccount.name) { $accounts += $currentAccount }
+                $currentAccount = $null 
+            }
         }
     }
     return $accounts
