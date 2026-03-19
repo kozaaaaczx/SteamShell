@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="assets/banner.png" alt="Steam Lua Banner" width="800">
-</p>
-
 <h1 align="center">🎮 Steam Lua Manager 🌙</h1>
 
 <p align="center">
