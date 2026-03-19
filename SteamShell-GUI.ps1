@@ -1,6 +1,8 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$script:AppVersion = '0.6.2'
+
+# SteamShell v0.7.0 "The Professional Update"
+$script:AppVersion = '0.7.0'
 $script:SteamExeOverride = $null
 
 function Get-SteamExePath {
@@ -51,27 +53,54 @@ Add-Type -AssemblyName System.Windows.Forms
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SteamShell" Height="720" Width="1100"
+        Title="SteamShell" Height="740" Width="1120"
         WindowStartupLocation="CenterScreen" AllowDrop="True"
         WindowStyle="None" ResizeMode="CanResizeWithGrip"
         Background="Transparent" AllowsTransparency="True">
   <Window.Resources>
+
+    <!-- Professional Shadow -->
+    <DropShadowEffect x:Key="PanelShadow" BlurRadius="12" ShadowDepth="0" Opacity="0.25"/>
 
     <Style x:Key="TopBtn" TargetType="Button">
       <Setter Property="Foreground" Value="White"/>
       <Setter Property="FontSize" Value="13"/>
       <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
       <Setter Property="Cursor" Value="Hand"/>
-      <Setter Property="Margin" Value="0,0,6,0"/>
+      <Setter Property="Margin" Value="0,0,8,0"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="18,10" BorderThickness="0">
+            <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="8" Padding="20,11" BorderThickness="0">
+              <Border.RenderTransform>
+                <TranslateTransform Y="0"/>
+              </Border.RenderTransform>
               <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="bd" Property="Opacity" Value="0.85"/></Trigger>
-              <Trigger Property="IsPressed" Value="True"><Setter TargetName="bd" Property="Opacity" Value="0.7"/></Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bd" Property="Opacity" Value="0.9"/>
+                <Trigger.EnterActions>
+                  <BeginStoryboard>
+                    <Storyboard>
+                      <DoubleAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="-2" Duration="0:0:0.15"/>
+                    </Storyboard>
+                  </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                  <BeginStoryboard>
+                    <Storyboard>
+                      <DoubleAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="0" Duration="0:0:0.15"/>
+                    </Storyboard>
+                  </BeginStoryboard>
+                </Trigger.ExitActions>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="bd" Property="Opacity" Value="0.75"/>
+                <Setter TargetName="bd" Property="RenderTransform">
+                  <Setter.Value><TranslateTransform Y="0"/></Setter.Value>
+                </Setter>
+              </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -84,7 +113,7 @@ Add-Type -AssemblyName System.Windows.Forms
       <Setter Property="FontFamily" Value="Segoe UI"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Margin" Value="0,0,0,2"/>
+      <Setter Property="Margin" Value="0,0,0,3"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
@@ -94,6 +123,7 @@ Add-Type -AssemblyName System.Windows.Forms
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="bd" Property="Background" Value="#1e2a3a"/>
+                <Setter Property="Foreground" Value="White"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -104,13 +134,13 @@ Add-Type -AssemblyName System.Windows.Forms
     <Style x:Key="WinBtn" TargetType="Button">
       <Setter Property="Foreground" Value="#6e7681"/>
       <Setter Property="FontSize" Value="14"/>
-      <Setter Property="Width" Value="46"/>
+      <Setter Property="Width" Value="48"/>
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="bd" Background="{TemplateBinding Background}" Padding="0,6">
+            <Border x:Name="bd" Background="{TemplateBinding Background}" Padding="0,8">
               <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
@@ -128,7 +158,7 @@ Add-Type -AssemblyName System.Windows.Forms
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="bd" Background="Transparent" Padding="0,6">
+            <Border x:Name="bd" Background="Transparent" Padding="0,8">
               <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
@@ -145,27 +175,41 @@ Add-Type -AssemblyName System.Windows.Forms
     <Style TargetType="CheckBox">
       <Setter Property="Foreground" Value="#8b949e"/>
       <Setter Property="FontSize" Value="12"/>
-      <Setter Property="Margin" Value="0,0,0,6"/>
+      <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
+
+    <Style x:Key="SectionHeader" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="#58a6ff"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
 
   </Window.Resources>
 
-  <Border Background="#0d1117" CornerRadius="12" BorderBrush="#21262d" BorderThickness="1">
+  <Border CornerRadius="8" BorderBrush="#21262d" BorderThickness="1">
+    <Border.Background>
+      <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0d1117" Offset="0"/>
+        <GradientStop Color="#0a0f14" Offset="1"/>
+      </LinearGradientBrush>
+    </Border.Background>
     <Grid>
       <Grid.RowDefinitions>
-        <RowDefinition Height="44"/>
+        <RowDefinition Height="46"/>
         <RowDefinition Height="Auto"/>
+        <RowDefinition Height="1"/>
         <RowDefinition Height="*"/>
-        <RowDefinition Height="36"/>
+        <RowDefinition Height="38"/>
       </Grid.RowDefinitions>
 
       <!-- Custom Title Bar -->
-      <Border Grid.Row="0" Background="#010409" CornerRadius="12,12,0,0" x:Name="titleBar">
-        <Grid Margin="16,0">
+      <Border Grid.Row="0" Background="#010409" CornerRadius="8,8,0,0" x:Name="titleBar">
+        <Grid Margin="18,0">
           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <Ellipse Width="10" Height="10" Fill="#58a6ff" Margin="0,0,8,0"/>
+            <Ellipse Width="10" Height="10" Fill="#58a6ff" Margin="0,0,10,0"/>
             <TextBlock x:Name="lblTitle" Text="SteamShell" FontSize="13" FontWeight="SemiBold" Foreground="#c9d1d9" VerticalAlignment="Center"/>
-            <TextBlock x:Name="lblVer" Text="" FontSize="10" Foreground="#484f58" VerticalAlignment="Center" Margin="8,2,0,0"/>
+            <TextBlock x:Name="lblVer" Text="" FontSize="11" Foreground="#484f58" VerticalAlignment="Center" Margin="10,2,0,0"/>
           </StackPanel>
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
             <Button x:Name="btnMin" Content="&#x2500;" Style="{StaticResource WinBtn}" FontSize="10"/>
@@ -175,40 +219,43 @@ Add-Type -AssemblyName System.Windows.Forms
         </Grid>
       </Border>
 
-      <!-- Action Bar -->
-      <Border Grid.Row="1" Background="#0d1117" Padding="16,12">
+      <!-- Action Bar (Revised Focus) -->
+      <Border Grid.Row="1" Background="Transparent" Padding="18,14">
         <StackPanel Orientation="Horizontal">
-          <Button x:Name="btnStart" Content="Start" Background="#238636" Style="{StaticResource TopBtn}" Width="120"/>
-          <Button x:Name="btnStop" Content="Stop" Background="#da3633" Style="{StaticResource TopBtn}" Width="120"/>
-          <Button x:Name="btnRestart" Content="Restart" Background="#21262d" Style="{StaticResource TopBtn}" Width="120"/>
-          <Button x:Name="btnKill" Content="Kill All" Background="#21262d" Style="{StaticResource TopBtn}" Width="120"/>
-          <Button x:Name="btnImport" Content="Import Files" Background="#1f6feb" Style="{StaticResource TopBtn}" Width="140" Margin="0"/>
+          <Button x:Name="btnStart" Content="Start" Background="#238636" Style="{StaticResource TopBtn}" Width="125"/>
+          <Button x:Name="btnStop" Content="Stop" Background="#21262d" Style="{StaticResource TopBtn}" Width="100"/>
+          <Button x:Name="btnRestart" Content="Restart" Background="#21262d" Style="{StaticResource TopBtn}" Width="110"/>
+          <Button x:Name="btnKill" Content="Kill All" Background="#21262d" Style="{StaticResource TopBtn}" Width="110"/>
+          <Button x:Name="btnImport" Content="Import Files" Background="#1f6feb" Style="{StaticResource TopBtn}" Width="145" Margin="0"/>
         </StackPanel>
       </Border>
 
+      <!-- Content Separator -->
+      <Border Grid.Row="2" Background="#21262d" Margin="18,0"/>
+
       <!-- Main Content -->
-      <Grid Grid.Row="2" Margin="16,0,16,10">
+      <Grid Grid.Row="3" Margin="18,16,18,12">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="280"/>
+          <ColumnDefinition Width="290"/>
         </Grid.ColumnDefinitions>
 
         <!-- Log Panel -->
-        <Border Grid.Column="0" Background="#010409" CornerRadius="10" BorderBrush="#161b22" BorderThickness="1" Margin="0,0,12,0">
+        <Border Grid.Column="0" Background="#010409" CornerRadius="10" BorderBrush="#161b22" BorderThickness="1" Margin="0,0,16,0" Effect="{StaticResource PanelShadow}">
           <Grid>
             <Grid.RowDefinitions>
-              <RowDefinition Height="38"/>
+              <RowDefinition Height="40"/>
               <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Border Background="#161b22" CornerRadius="10,10,0,0" Padding="14,0">
+            <Border Background="#0d1117" CornerRadius="10,10,0,0" Padding="16,0" BorderBrush="#161b22" BorderThickness="0,0,0,1">
               <Grid>
-                <TextBlock Text="Console" Foreground="#484f58" FontSize="12" VerticalAlignment="Center"/>
-                <Button x:Name="btnClear" Content="Clear" Style="{StaticResource SideBtn}" HorizontalAlignment="Right" Foreground="#484f58" Margin="0"/>
+                <TextBlock Text="Console" Foreground="#58a6ff" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" LetterSpacing="1"/>
+                <Button x:Name="btnClear" Content="Clear" Style="{StaticResource SideBtn}" HorizontalAlignment="Right" Foreground="#484f58" Margin="0" FontSize="11"/>
               </Grid>
             </Border>
             <ScrollViewer Grid.Row="1" x:Name="svLog" VerticalScrollBarVisibility="Auto" Margin="0">
-              <TextBlock x:Name="txtLog" Foreground="#3fb950" FontFamily="Cascadia Code, Consolas" FontSize="12"
-                         TextWrapping="Wrap" Padding="14,10" Background="Transparent"/>
+              <TextBox x:Name="txtLog" Foreground="#3fb950" FontFamily="Cascadia Code, Consolas" FontSize="12"
+                       TextWrapping="Wrap" Padding="16,12" Background="Transparent" IsReadOnly="True" BorderThickness="0"/>
             </ScrollViewer>
           </Grid>
         </Border>
@@ -217,11 +264,11 @@ Add-Type -AssemblyName System.Windows.Forms
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel>
 
-            <!-- Accounts -->
-            <Border Background="#161b22" CornerRadius="10" Padding="16" Margin="0,0,0,10" BorderBrush="#21262d" BorderThickness="1">
+            <!-- Accounts Card -->
+            <Border Background="#161b22" CornerRadius="10" Padding="18" Margin="0,0,0,14" BorderBrush="#21262d" BorderThickness="1" Effect="{StaticResource PanelShadow}">
               <StackPanel>
-                <TextBlock Text="ACCOUNTS" Foreground="#58a6ff" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
-                <ComboBox x:Name="cmbAccounts" Background="#0d1117" Foreground="White" Padding="8,6" Margin="0,0,0,8" FontSize="12">
+                <TextBlock Text="Accounts" Style="{StaticResource SectionHeader}"/>
+                <ComboBox x:Name="cmbAccounts" Background="#0d1117" Foreground="White" Padding="10,8" Margin="0,0,0,12" FontSize="12">
                   <ComboBox.Resources>
                     <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#161b22"/>
                     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#1f6feb"/>
@@ -231,29 +278,29 @@ Add-Type -AssemblyName System.Windows.Forms
               </StackPanel>
             </Border>
 
-            <!-- Options -->
-            <Border Background="#161b22" CornerRadius="10" Padding="16" Margin="0,0,0,10" BorderBrush="#21262d" BorderThickness="1">
+            <!-- Settings Card -->
+            <Border Background="#161b22" CornerRadius="10" Padding="18" Margin="0,0,0,14" BorderBrush="#21262d" BorderThickness="1" Effect="{StaticResource PanelShadow}">
               <StackPanel>
-                <TextBlock Text="OPTIONS" Foreground="#58a6ff" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Text="Settings" Style="{StaticResource SectionHeader}"/>
                 <CheckBox x:Name="chkBackup" Content="Backup before overwrite" IsChecked="True"/>
                 <CheckBox x:Name="chkOnTop" Content="Always on top"/>
-                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                  <TextBlock Text="Wait:" Foreground="#8b949e" VerticalAlignment="Center" FontSize="12" Margin="0,0,8,0"/>
-                  <TextBox x:Name="txtWait" Text="12" Width="45" Background="#0d1117" Foreground="White" BorderBrush="#30363d" Padding="6,4" FontSize="12"/>
-                  <TextBlock Text="sec" Foreground="#484f58" VerticalAlignment="Center" FontSize="11" Margin="6,0,0,0"/>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                  <TextBlock Text="Wait:" Foreground="#8b949e" VerticalAlignment="Center" FontSize="12" Margin="0,0,10,0"/>
+                  <TextBox x:Name="txtWait" Text="12" Width="50" Background="#0d1117" Foreground="White" BorderBrush="#30363d" Padding="8,6" FontSize="12"/>
+                  <TextBlock Text="sec" Foreground="#484f58" VerticalAlignment="Center" FontSize="11" Margin="8,0,0,0"/>
                 </StackPanel>
               </StackPanel>
             </Border>
 
-            <!-- Quick Access -->
-            <Border Background="#161b22" CornerRadius="10" Padding="8" Margin="0,0,0,10" BorderBrush="#21262d" BorderThickness="1">
+            <!-- Tools Card -->
+            <Border Background="#161b22" CornerRadius="10" Padding="10" Margin="0,0,0,8" BorderBrush="#21262d" BorderThickness="1" Effect="{StaticResource PanelShadow}">
               <StackPanel>
-                <TextBlock Text="QUICK ACCESS" Foreground="#58a6ff" FontSize="11" FontWeight="Bold" Margin="8,8,8,6"/>
-                <Button x:Name="btnDepot"  Content="Depot Cache"   Style="{StaticResource SideBtn}"/>
-                <Button x:Name="btnLua"    Content="Lua Scripts"    Style="{StaticResource SideBtn}"/>
-                <Button x:Name="btnConfig" Content="Steam Config"   Style="{StaticResource SideBtn}"/>
-                <Button x:Name="btnBrowse" Content="Set Steam Path" Style="{StaticResource SideBtn}"/>
-                <Button x:Name="btnAbout"  Content="About"          Style="{StaticResource SideBtn}" Margin="0"/>
+                <TextBlock Text="Tools" Style="{StaticResource SectionHeader}" Margin="12,12,12,8"/>
+                <Button x:Name="btnDepot"  Content="Depot Cache Folder"   Style="{StaticResource SideBtn}"/>
+                <Button x:Name="btnLua"    Content="Lua Scripts Folder"    Style="{StaticResource SideBtn}"/>
+                <Button x:Name="btnConfig" Content="Steam Config Folder"   Style="{StaticResource SideBtn}"/>
+                <Button x:Name="btnBrowse" Content="Set Steam Path"        Style="{StaticResource SideBtn}"/>
+                <Button x:Name="btnAbout"  Content="About"                  Style="{StaticResource SideBtn}" Margin="0,0,0,8"/>
               </StackPanel>
             </Border>
 
@@ -262,10 +309,10 @@ Add-Type -AssemblyName System.Windows.Forms
       </Grid>
 
       <!-- Status Bar -->
-      <Border Grid.Row="3" Background="#010409" CornerRadius="0,0,12,12" Padding="16,0">
+      <Border Grid.Row="4" Background="#010409" CornerRadius="0,0,8,8" Padding="18,0">
         <Grid VerticalAlignment="Center">
-          <TextBlock x:Name="statusLabel" Text="Ready" Foreground="#484f58" FontSize="11"/>
-          <TextBlock x:Name="statusSteam" Text="" HorizontalAlignment="Right" FontSize="11" FontWeight="SemiBold"/>
+          <TextBlock x:Name="statusLabel" Text="Ready" Foreground="#484f58" FontSize="11" VerticalAlignment="Center"/>
+          <TextBlock x:Name="statusSteam" Text="" HorizontalAlignment="Right" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
         </Grid>
       </Border>
 
@@ -285,9 +332,8 @@ $btnKill = $w.FindName("btnKill"); $btnImport = $w.FindName("btnImport"); $btnSw
 $btnClear = $w.FindName("btnClear"); $btnDepot = $w.FindName("btnDepot"); $btnLua = $w.FindName("btnLua")
 $btnConfig = $w.FindName("btnConfig"); $btnBrowse = $w.FindName("btnBrowse"); $btnAbout = $w.FindName("btnAbout")
 $cmbAccounts = $w.FindName("cmbAccounts"); $chkBackup = $w.FindName("chkBackup"); $chkOnTop = $w.FindName("chkOnTop")
-$txtWait = $w.FindName("txtWait"); $txtLog = $w.FindName("txtLog")
+$txtWait = $w.FindName("txtWait"); $txtLog = $w.FindName("txtLog"); $svLog = $w.FindName("svLog")
 $statusLabel = $w.FindName("statusLabel"); $statusSteam = $w.FindName("statusSteam")
-$svLog = $w.FindName("svLog")
 
 $lblVer.Text = "v$script:AppVersion"
 
@@ -297,10 +343,10 @@ $btnMin.Add_Click({ $w.WindowState = 'Minimized' })
 $btnMax.Add_Click({ if ($w.WindowState -eq 'Maximized') { $w.WindowState = 'Normal' } else { $w.WindowState = 'Maximized' } })
 $btnClose.Add_Click({ $w.Close() })
 
-# Log
+# Log (OPTIMIZED for WPF performance)
 function Write-Log([string]$msg) {
     $ts = (Get-Date).ToString('HH:mm:ss')
-    $txtLog.Text += "[$ts] $msg`n"
+    $txtLog.AppendText("[$ts] $msg`n")
     if ($svLog) { $svLog.ScrollToEnd() }
 }
 
@@ -334,8 +380,8 @@ function Update-Accounts {
 
 function Update-Status {
     $pr = Get-Process steam -ErrorAction SilentlyContinue
-    if ($pr) { $statusSteam.Text = "STEAM: RUNNING"; $statusSteam.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFrom("#3fb950") }
-    else { $statusSteam.Text = "STEAM: STOPPED"; $statusSteam.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFrom("#f85149") }
+    if ($pr) { $statusSteam.Text = "● RUNNING"; $statusSteam.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFrom("#3fb950") }
+    else { $statusSteam.Text = "● STOPPED"; $statusSteam.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFrom("#f85149") }
 }
 
 # Events
@@ -363,7 +409,7 @@ $btnBrowse.Add_Click({
     $dlg = New-Object System.Windows.Forms.OpenFileDialog; $dlg.Filter="steam.exe|steam.exe"
     if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $script:SteamExeOverride=$dlg.FileName; Write-Log "Path: $($dlg.FileName)" }
 })
-$btnAbout.Add_Click({ [System.Windows.MessageBox]::Show("SteamShell v$script:AppVersion`nModern Steam Management`n`ngithub.com/kozaaaaczx/steam-lua","About",0,64) })
+$btnAbout.Add_Click({ [System.Windows.MessageBox]::Show("SteamShell v$script:AppVersion`nProfessional Steam Management`n`ngithub.com/kozaaaaczx/steam-lua","About",0,64) })
 $chkOnTop.Add_Checked({ $w.Topmost=$true }); $chkOnTop.Add_Unchecked({ $w.Topmost=$false })
 
 # Drag & Drop
@@ -384,5 +430,5 @@ $timerUpd.Add_Tick({ param($s,$e); $s.Stop()
 }); $timerUpd.Start()
 
 # Init
-Update-Accounts; Update-Status; Write-Log "SteamShell v$script:AppVersion loaded. Drag files here to import."
+Update-Accounts; Update-Status; Write-Log "SteamShell v$script:AppVersion initialized. Ready for operations."
 $w.ShowDialog() | Out-Null
