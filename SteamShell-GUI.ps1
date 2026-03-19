@@ -1,6 +1,6 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$script:AppVersion = '0.6.0'
+$script:AppVersion = '0.6.1'
 $script:SteamExeOverride = $null
 
 function Get-SteamExePath {
@@ -220,7 +220,7 @@ Add-Type -AssemblyName System.Windows.Forms
             <!-- Accounts -->
             <Border Background="#161b22" CornerRadius="10" Padding="16" Margin="0,0,0,10" BorderBrush="#21262d" BorderThickness="1">
               <StackPanel>
-                <TextBlock Text="ACCOUNTS" Foreground="#58a6ff" FontSize="11" FontWeight="Bold" Margin="0,0,0,10" LetterSpacing="1"/>
+                <TextBlock Text="ACCOUNTS" Foreground="#58a6ff" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
                 <ComboBox x:Name="cmbAccounts" Background="#0d1117" Foreground="White" Padding="8,6" Margin="0,0,0,8" FontSize="12">
                   <ComboBox.Resources>
                     <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#161b22"/>

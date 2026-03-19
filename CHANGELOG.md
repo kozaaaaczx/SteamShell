@@ -1,12 +1,11 @@
 # Changelog
 
-## [0.5.0] - 2026-03-22
-### Added
-- **Modern Rebirth UI**: Complete visual overhaul inspired by the new Steam client. Flat design, "Deep Steam" color palette, and improved layouts.
-- **Improved Steam Account Switcher**: Robust parsing of `loginusers.vdf` for flawless account detection.
-- **Drag & Drop**: Fully integrated into the modern UI.
+## [0.6.1] - 2026-03-22
 ### Fixed
-- Fixed `[System.EventArgs] does not contain a method named 'Stop'` error in update checker timer.
+- Fixed XAML parse error in ACCOUNTS section.
 
-## [0.4.1] - 2026-03-21
+## [0.6.0] - 2026-03-22
+### Added
+- **Modern Borderless UI**: Completely new custom window frame with rounded corners.
+- **Improved Sidebar**: GitHub-style cards for options and quick access.
 ...
